@@ -28,6 +28,7 @@ pipeline {
 
                         echo "Running new container..."
                         docker run -d --name myapp -p 8085:80 myapp:v1
+                        docker ps
                     '''
                 }
             }
