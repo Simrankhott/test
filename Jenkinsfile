@@ -1,50 +1,36 @@
 pipeline {
     agent any
 
-    environment {
-        APP_NAME = "test1"
-    }
-
     stages {
         stage('Checkout') {
             steps {
-                echo "Checking out code..."
-                // With "Pipeline script from SCM" Jenkins auto-checkouts
-                // but we echo just for logs
+                checkout scm
             }
         }
 
-        stage('Build') {
+        stage('Build Docker Image') {
             steps {
-                echo "Building ${APP_NAME}..."
-                sh 'echo "Simran build step running"'
+                script {
+                    sh '''
+                        echo "Building Docker Image..."
+                        docker build -t myapp:v1 .
+                    '''
+                }
             }
         }
 
-        stage('Test') {
+        stage('Run Docker Container') {
             steps {
-                echo "Running tests..."
-                sh 'echo "Pretend tests here"'
-            }
-        }
+                script {
+                    sh '''
+                        echo "Stopping old container if exists..."
+                        docker rm -f myapp || true
 
-        stage('Package') {
-            steps {
-                echo "Packaging app..."
-                sh 'ls -la'
+                        echo "Running new container..."
+                        docker run -d --name myapp -p 8085:80 myapp:v1
+                    '''
+                }
             }
-        }
-    }
-
-    post {
-        always {
-            echo "Pipeline finished for ${APP_NAME}"
-        }
-        success {
-            echo "✅ Build SUCCESS"
-        }
-        failure {
-            echo "❌ Build FAILED"
         }
     }
 }
