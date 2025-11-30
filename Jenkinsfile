@@ -2,9 +2,9 @@ pipeline {
     agent any
 
     environment {
-        DOCKERHUB_USER = "simrankhot"   // <-- your Docker Hub username
-        IMAGE_NAME = "myapp"
-        IMAGE_TAG = "v1"
+        DOCKERHUB_USER = "simrankhot"   // your Docker Hub username
+        IMAGE_NAME     = "myapp"
+        IMAGE_TAG      = "v1"
     }
 
     stages {
@@ -26,6 +26,23 @@ pipeline {
             }
         }
 
+        // 🔍 Trivy image scan (fail pipeline if HIGH/CRITICAL vulns)
+        stage('Trivy Scan Docker Image') {
+            steps {
+                script {
+                    sh """
+                        echo "Running Trivy scan on image ${IMAGE_NAME}:${IMAGE_TAG}..."
+                        docker run --rm \
+                          -v /var/run/docker.sock:/var/run/docker.sock \
+                          aquasec/trivy:latest image \
+                          --exit-code 1 \
+                          --severity HIGH,CRITICAL \
+                          ${IMAGE_NAME}:${IMAGE_TAG}
+                    """
+                }
+            }
+        }
+
         stage('Run Docker Container') {
             steps {
                 script {
@@ -41,6 +58,7 @@ pipeline {
             }
         }
 
+    
         stage('Push to Docker Hub') {
             steps {
                 script {
